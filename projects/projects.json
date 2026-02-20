@@ -1,0 +1,26 @@
+[
+  {
+    "folder": "projet-1",
+    "intensity": "light",
+    "type": "tool",
+    "url": "https://github.com/BabasGames/Claude-Context-Menu-Installer",
+    "techs": ["Python", "Tkinter", "PyInstaller"],
+    "images": ["screen1.png", "screen2.png"]
+  },
+  {
+    "folder": "projet-2",
+    "intensity": "heavy",
+    "type": "app",
+    "url": "https://github.com/BabasGames/SoundLowerer",
+    "techs": ["Python", "PyQt5", "pycaw"],
+    "images": ["screen1.png", "screen2.png"]
+  },
+  {
+    "folder": "projet-3",
+    "intensity": "medium",
+    "type": "tool",
+    "url": "https://github.com/BabasGames/wot-mod-station",
+    "techs": ["Python", "Requests", "BeautifulSoup"],
+    "images": ["screen1.png"]
+  }
+]

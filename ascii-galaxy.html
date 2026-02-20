@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASCII GALAXY</title>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Courier+Prime&family=Nova+Mono&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: radial-gradient(ellipse at center, #0a0515 0%, #050210 40%, #000 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  canvas { display: block; }
+
+
+  /* ── Wrapper principal ── */
+  #app {
+    position: fixed;
+    inset: 0;
+  }
+
+  /* ── Canvas container : centré, se décale vers la gauche quand panneau ouvert ── */
+  #galaxy-wrap {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+
+  /* ── Panneau latéral ── */
+  #panel {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 500px;
+    background: #05000f;
+    border-left: 1px solid #4a1a7a;
+    display: flex;
+    flex-direction: column;
+    padding: 40px 32px;
+    transform: translateX(100%);
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  #panel.open {
+    transform: translateX(0);
+  }
+
+  #panel-resize {
+    position: absolute;
+    top: 0; bottom: 0; left: -4px;
+    width: 8px;
+    cursor: ew-resize;
+    z-index: 2;
+  }
+  #panel-resize::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px; height: 40px;
+    background: #2a1a4a;
+    border-radius: 2px;
+    transition: background 0.2s;
+  }
+  #panel-resize:hover::after,
+  #panel-resize.dragging::after {
+    background: #bf6fff;
+  }
+
+  #panel-close {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    color: #4a1a7a;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 22px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  #panel-close:hover { color: #bf6fff; }
+
+  #panel h2 {
+    font-size: 32px;
+    letter-spacing: 4px;
+    color: #bf6fff;
+    margin-bottom: 8px;
+  }
+
+  #panel .arm-num {
+    font-size: 18px;
+    letter-spacing: 3px;
+    color: #7a4aaa;
+    margin-bottom: 28px;
+  }
+
+  #panel .stat {
+    padding: 14px 0;
+    border-bottom: 1px solid #1a0a2a;
+  }
+
+  #panel .stat-label {
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: #7a4aaa;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  #panel .stat-value {
+    font-size: 24px;
+    color: #bf6fff;
+    word-break: break-all;
+  }
+
+  #panel .desc {
+    margin-top: 24px;
+    font-size: 20px;
+    letter-spacing: 1px;
+    color: #9a6aca;
+    line-height: 1.6;
+    text-align: justify;
+  }
+
+  /* ── Carousel ── */
+  #carousel {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    margin-top: 24px;
+    border: 1px solid #1a0a2a;
+    overflow: hidden;
+    background: #030008;
+  }
+  #carousel.hidden { display: none; }
+
+  #carousel img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.4s;
+    cursor: pointer;
+  }
+  #carousel img.active { opacity: 1; }
+
+  .car-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.6);
+    color: #bf6fff;
+    border: 1px solid #4a1a7a;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 18px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    z-index: 1;
+  }
+  .car-btn:hover { border-color: #bf6fff; }
+  .car-btn.prev { left: 6px; }
+  .car-btn.next { right: 6px; }
+
+  #carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  #carousel-dots.hidden { display: none; }
+
+  #carousel-dots .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #1a0a2a;
+    border: 1px solid #4a1a7a;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  #carousel-dots .dot.active { background: #bf6fff; }
+
+  /* ── Lightbox ── */
+  #lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.92);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  #lightbox.open { opacity: 1; pointer-events: all; }
+
+  #lightbox img {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+    border: 1px solid #2a1a4a;
+  }
+
+  #lightbox .lb-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.5);
+    color: #bf6fff;
+    border: 1px solid #4a1a7a;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 28px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  #lightbox .lb-btn:hover { border-color: #bf6fff; }
+  #lightbox .lb-prev { left: 20px; }
+  #lightbox .lb-next { right: 20px; }
+
+  #lightbox .lb-close {
+    position: absolute;
+    top: 20px; right: 24px;
+    background: transparent;
+    border: none;
+    color: #4a1a7a;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 30px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  #lightbox .lb-close:hover { color: #bf6fff; }
+
+  #lightbox .lb-counter {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #4a1a7a;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 16px;
+    letter-spacing: 3px;
+  }
+
+  /* Curseur pointer sur le canvas quand on survole un bras */
+  #galaxy { cursor: default; }
+  #galaxy.hovering { cursor: pointer; }
+
+  /* ── Responsive mobile ── */
+  @media (max-width: 600px) {
+    #panel { width: 100% !important; }
+    #panel-resize { display: none; }
+  }
+
+  /* ── Intro overlay ── */
+  #intro {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.6s ease;
+  }
+  #intro.fade-out { opacity: 0; pointer-events: none; }
+  #intro-canvas { display: block; }
+</style>
+</head>
+<body>
+
+<div id="lightbox">
+  <button class="lb-close" onclick="lbClose()">✕</button>
+  <button class="lb-btn lb-prev" onclick="lbPrev()">◀</button>
+  <img id="lb-img" src="" alt="">
+  <button class="lb-btn lb-next" onclick="lbNext()">▶</button>
+  <div class="lb-counter" id="lb-counter"></div>
+</div>
+
+<div id="intro">
+  <canvas id="intro-canvas"></canvas>
+</div>
+<div id="app">
+  <div id="galaxy-wrap">
+    <canvas id="galaxy"></canvas>
+  </div>
+  <div id="panel">
+    <div id="panel-resize"></div>
+    <button id="panel-close" onclick="closePanel()">✕</button>
+    <h2 id="panel-title">PROJET</h2>
+    <div class="arm-num" id="panel-sub">TYPE</div>
+    <div class="stat">
+      <span class="stat-label">Intensité</span>
+      <span class="stat-value" id="p-intensity">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Technologies</span>
+      <span class="stat-value" id="p-techs">—</span>
+    </div>
+    <div class="stat" id="p-url-row">
+      <span class="stat-label">Lien</span>
+      <span class="stat-value" id="p-url">—</span>
+    </div>
+    <div class="desc" id="p-desc"></div>
+    <div id="carousel" class="hidden">
+      <button class="car-btn prev" onclick="carouselPrev()">◀</button>
+      <button class="car-btn next" onclick="carouselNext()">▶</button>
+    </div>
+    <div id="carousel-dots" class="hidden"></div>
+  </div>
+</div>
+
+
+<script>
+// ─────────────────────────────────────────────────────
+//  Rendu sur <canvas> avec fillText() à positions pixel
+//  exactes → zéro sautillement, aspect ratio parfait.
+//
+//  Principe du ratio :
+//  - On mesure la VRAIE largeur (CW) et hauteur (CH) d'un
+//    caractère dans la police chargée.
+//  - COLS et ROWS sont calculés pour remplir l'écran.
+//  - Dans getIntensity(), on travaille en pixels (px, py)
+//    divisés par le plus petit demi-axe → la galaxie est
+//    ronde quel que soit le ratio CW/CH.
+// ─────────────────────────────────────────────────────
+
+const canvas = document.getElementById('galaxy');
+const ctx    = canvas.getContext('2d');
+
+// ── Projets ─────────────────────────────────────────
+let PROJECTS = [];
+const WEIGHT = { light: 0.5, medium: 0.75, heavy: 1.0 };
+function getWeight(p) { return WEIGHT[p.intensity] || 0.75; }
+
+// Jeux de caractères par densité croissante
+const CHARS = [
+  ['.', '·', '`', ','],                          // très léger
+  ['-', '~', ':', ';', '+', '='],                // léger
+  ['i', 't', 'f', 'r', 'j', 'x', 'n', 'v'],    // moyen
+  ['Y', 'J', 'L', 'T', 'F', '7', 'I', 'Z'],    // dense
+  ['@', '#', '&', '%', '0', 'M', 'W', 'B'],     // très dense (noyau)
+];
+
+function pickChar(intensity, noise) {
+  const i = Math.min(1, Math.max(0, intensity + noise));
+  if (i < 0.05) return null;
+  const tier = Math.min(4, Math.floor(i * 5.5));
+  const arr  = CHARS[tier];
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// ── Grille ───────────────────────────────────────────
+let COLS, ROWS, CW, CH;
+
+function setupGrid() {
+  const availW = window.innerWidth;
+  const availH = window.innerHeight;
+
+  // Taille de police cible : ~120 colonnes sur desktop, adaptatif sur mobile
+  const fontScale = { 'VT323': 1.0, 'Share Tech Mono': 0.75, 'Courier Prime': 1.0, 'Nova Mono': 1.0, 'Press Start 2P': 1.0 };
+  const scale = fontScale[currentFont] || 1.0;
+  const targetCols = Math.min(120, Math.floor(availW / 8));
+  const fontSize = Math.max(8, Math.floor(availW / targetCols / 0.55 * scale));
+  const font = `${fontSize}px ${currentFont}, monospace`;
+
+  // Mesurer CW et CH réels
+  ctx.font = font;
+  CW = ctx.measureText('M').width;
+  CH = fontSize; // line-height = 1em
+
+  COLS = Math.floor(availW / CW);
+  ROWS = Math.floor(availH / CH);
+
+  canvas.width  = COLS * CW;
+  canvas.height = ROWS * CH;
+
+  initHole();
+  buildCaches();
+}
+
+// ── Calcul d'intensité (coordonnées pixel → rondes) ──
+let angle = 0;
+let babasHoleRadius = 0.15; // rayon du trou central, mis à jour par buildBabasGrid()
+
+function getIntensity(col, row) {
+  const px = (col + 0.5) * CW - canvas.width  * 0.5;
+  const py = (row + 0.5) * CH - canvas.height * 0.5;
+
+  const scale = Math.min(canvas.width, canvas.height) * 0.46;
+  const nx = px / scale;
+  const ny = py / scale;
+
+  const cosA = Math.cos(angle);
+  const sinA = Math.sin(angle);
+  const rx   = nx * cosA - ny * sinA;
+  const ry   = nx * sinA + ny * cosA;
+
+  const dist = Math.sqrt(rx * rx + ry * ry);
+  if (dist > 1.0) return 0;
+
+  // ── Trou central pour BABAS ──
+  if (dist < babasHoleRadius) return 0;
+  const HOLE_EDGE = 0.08;
+  let holeFactor = 1;
+  if (dist < babasHoleRadius + HOLE_EDGE) {
+    const t = (dist - babasHoleRadius) / HOLE_EDGE;
+    holeFactor = t * t;
+  }
+
+  const phi = Math.atan2(ry, rx);
+
+  // ── Paramètres spirale ──
+  const TIGHTNESS = 3.0;
+  const ARM_W     = Math.min(0.55, 0.20 / Math.sqrt(numArms) * 1.8);
+
+  // ── Bras spiraux avec poids par projet ──
+  let armStr = 0;
+  for (let a = 0; a < numArms; a++) {
+    const weight   = PROJECTS.length ? getWeight(PROJECTS[a]) : 0.75;
+    const base     = (a / numArms) * Math.PI * 2;
+    const expected = base + TIGHTNESS * Math.log(dist + 0.01);
+    let   diff     = ((phi - expected) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    if (diff > Math.PI) diff = Math.PI * 2 - diff;
+    const rawStr   = Math.exp(-(diff * diff) / (2 * ARM_W * ARM_W));
+    const armEnv   = Math.exp(-dist * dist * (5.0 - weight * 2.5));
+    armStr = Math.max(armStr, rawStr * armEnv * (1.0 + weight * 0.9));
+  }
+
+  const disk = Math.exp(-dist * 1.6) * 0.25;
+
+  return Math.min(1, (armStr + disk) * holeFactor);
+}
+
+// ── Couleur ──────────────────────────────────────────
+let colorOn = true;
+
+function getCellArm(col, row) {
+  const px    = (col + 0.5) * CW - canvas.width  * 0.5;
+  const py    = (row + 0.5) * CH - canvas.height * 0.5;
+  const scale = Math.min(canvas.width, canvas.height) * 0.46;
+  const nx    = px / scale;
+  const ny    = py / scale;
+  const cosA  =  Math.cos(angle);
+  const sinA  =  Math.sin(angle);
+  const rx    =  nx * cosA - ny * sinA;
+  const ry    =  nx * sinA + ny * cosA;
+  const dist  = Math.sqrt(rx * rx + ry * ry);
+  if (dist < babasHoleRadius || dist > 1.0) return -1;
+  const phi       = Math.atan2(ry, rx);
+  const TIGHTNESS = 3.0;
+  const ARM_W     = Math.min(0.55, 0.20 / Math.sqrt(numArms) * 1.8);
+
+  let bestArm = -1, bestStr = 0;
+  for (let a = 0; a < numArms; a++) {
+    const weight   = PROJECTS.length ? getWeight(PROJECTS[a]) : 0.75;
+    const base     = (a / numArms) * Math.PI * 2;
+    const expected = base + TIGHTNESS * Math.log(dist + 0.01);
+    let   diff     = ((phi - expected) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    if (diff > Math.PI) diff = Math.PI * 2 - diff;
+    const armEnv   = Math.exp(-dist * dist * (5.0 - weight * 2.5));
+    const str      = Math.exp(-(diff * diff) / (2 * ARM_W * ARM_W)) * armEnv;
+    if (str > bestStr) { bestStr = str; bestArm = a; }
+  }
+  return bestStr > 0.003 ? bestArm : -1;
+}
+
+function getColor(inten, col, row, hovered) {
+  const px   = (col + 0.5) * CW - canvas.width  * 0.5;
+  const py   = (row + 0.5) * CH - canvas.height * 0.5;
+  const scale = Math.min(canvas.width, canvas.height) * 0.46;
+  const dist  = Math.sqrt((px/scale)**2 + (py/scale)**2);
+
+  if (!colorOn) {
+    const v = Math.round(inten * 255);
+    return `rgb(${Math.round(v*0.5)},0,${v})`;
+  }
+
+  // Couleurs originales, puis on éclaircit uniformément sur hover (même ratio R/G/B)
+  const v = Math.round(inten * 255);
+  let r, g, b;
+  if      (dist < 0.18) { r = 255;                      g = Math.round(v*0.3);        b = Math.round(v*0.6);        }
+  else if (dist < 0.30) { r = Math.round(v*0.85);       g = Math.round(v*0.05);       b = Math.round(v*0.75);       }
+  else if (dist < 0.55) { r = Math.round(v*0.55);       g = 0;                        b = Math.round(v*0.9);        }
+  else                  { r = Math.round(v*0.3);        g = 0;                        b = Math.round(v*0.45);       }
+
+  // Hover : mix proportionnel à l'intensité → zones claires s'éclaircissent, zones sombres restent discrètes
+  if (hovered) {
+    const mix = Math.pow(inten, 2) * 0.7; // sombre=0.2, clair=0.7
+    r = Math.round(r + (255 - r) * mix);
+    g = Math.round(g + (255 - g) * mix);
+    b = Math.round(b + (255 - b) * mix);
+  }
+  return `rgb(${r},${g},${b})`;
+}
+
+// ── Caches ───────────────────────────────────────────
+let iCache  = null; // intensité
+let flCache = null; // phase scintillement
+
+function buildCaches() {
+  iCache  = Array.from({length: ROWS}, () => new Float32Array(COLS));
+  flCache = Array.from({length: ROWS}, () =>
+    Float32Array.from({length: COLS}, () => Math.random() * Math.PI * 2)
+  );
+  rebuildIntensity();
+}
+
+function rebuildIntensity() {
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      iCache[r][c] = getIntensity(c, r);
+}
+
+// ── Hash déterministe pour étoiles de fond ───────────
+function starHash(c, r) {
+  let h = (c * 374761 + r * 668265) & 0x7fffffff;
+  h = ((h >> 16) ^ h) * 0x45d9f3b;
+  h = ((h >> 16) ^ h) * 0x45d9f3b;
+  h = (h >> 16) ^ h;
+  return (h & 0xffff) / 0xffff;
+}
+
+// ── Boucle d'animation ───────────────────────────────
+let numArms     = 1;
+let mousePos    = null; // position souris normalisée
+let hoveredArm  = -1;  // index du bras survolé (-1 = aucun)
+let currentFont = 'Share Tech Mono';
+let speedMult = 4;
+let spinning  = true;
+let flickerOn = true;
+
+const FPS_CHAR = 15;           // fréquence de changement des chars
+const MS_CHAR  = 1000 / FPS_CHAR;
+let lastCharT  = 0;
+let lastT      = 0;
+
+function frame(t) {
+  requestAnimationFrame(frame);
+
+  const dt = t - lastT;
+  lastT = t;
+
+  // ── Intro state machine ──
+  if (introPhase !== 'done') {
+    const elapsed = t - introT0;
+    if (introPhase === 'typing') {
+      if (elapsed > 5 * INTRO_LETTER_MS + 150) {
+        introPhase = 'hold';
+        introT0 = t;
+      }
+    } else if (introPhase === 'hold') {
+      if (elapsed > INTRO_HOLD_MS) {
+        introPhase = 'wave';
+        introT0 = t;
+      }
+    } else if (introPhase === 'wave') {
+      const p = Math.min(1, elapsed / INTRO_WAVE_MS);
+      introReveal = (1 - Math.pow(1 - p, 3)) * INTRO_WAVE_MAX; // ease-out cubic
+      if (p >= 1) {
+        introPhase = 'done';
+        introRunning = false;
+      }
+    }
+  }
+
+  if (spinning) {
+    angle += 0.0008 * speedMult * (dt / 16.67);
+    rebuildIntensity();
+  }
+
+  // Throttle rendu des chars (transition progressive pendant l'onde)
+  let charInterval = MS_CHAR;
+  if (introPhase === 'typing' || introPhase === 'hold') {
+    charInterval = 16; // ~60fps
+  } else if (introPhase === 'wave') {
+    const p = Math.min(1, (t - introT0) / INTRO_WAVE_MS);
+    charInterval = 16 + p * p * (MS_CHAR - 16); // ease-in vers 15fps
+  }
+  if (t - lastCharT < charInterval) return;
+  lastCharT = t;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.font = `${CH}px ${currentFont}, monospace`;
+  ctx.textBaseline = 'top';
+
+  const showGalaxy = introPhase === 'wave' || introPhase === 'done';
+  const galScale   = Math.min(canvas.width, canvas.height) * 0.46;
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const inten = iCache[r][c];
+
+      if (inten < 0.04) {
+        // Étoiles de fond très subtiles dans le vide
+        const sh = starHash(c, r);
+        if (sh < 0.012) {
+          // Pendant typing/hold : quelques étoiles lointaines, pendant wave : révélées avec l'onde
+          if (introPhase === 'wave') {
+            const px = (c + 0.5) * CW - canvas.width * 0.5;
+            const py = (r + 0.5) * CH - canvas.height * 0.5;
+            if (Math.sqrt(px * px + py * py) / galScale > introReveal) continue;
+          }
+          const twinkle = 0.3 + 0.7 * Math.abs(Math.sin(t * 0.0003 + sh * 600));
+          const v = Math.round(twinkle * (30 + sh * 3000));
+          ctx.fillStyle = `rgba(${v + 20},${v},${v + 40},${0.25 + twinkle * 0.25})`;
+          ctx.fillText(sh < 0.003 ? '+' : sh < 0.006 ? '·' : '.', Math.round(c * CW), Math.round(r * CH));
+        }
+        continue;
+      }
+
+      if (!showGalaxy) continue;
+
+      // Pendant l'onde : filtrer par distance + lueur au front de l'onde
+      let waveBrightBoost = 0;
+      if (introPhase === 'wave') {
+        const px = (c + 0.5) * CW - canvas.width * 0.5;
+        const py = (r + 0.5) * CH - canvas.height * 0.5;
+        const cellDist = Math.sqrt(px * px + py * py) / galScale;
+        if (cellDist > introReveal) continue;
+        const fromFront = introReveal - cellDist;
+        if (fromFront < 0.12) {
+          waveBrightBoost = (1 - fromFront / 0.12) * 0.5;
+        }
+      }
+
+      let noise = 0;
+      if (flickerOn) {
+        flCache[r][c] += 0.08 * speedMult;
+        noise = Math.sin(flCache[r][c]) * 0.18;
+      }
+
+      const ch = pickChar(inten + waveBrightBoost, noise);
+      if (!ch) continue;
+
+      const onHov = hoveredArm !== -1 && inten > 0.08 && getCellArm(c, r) === hoveredArm;
+      ctx.fillStyle = getColor(Math.min(1, inten + noise * 0.4 + waveBrightBoost), c, r, onHov);
+      ctx.fillText(ch, Math.round(c * CW), Math.round(r * CH));
+    }
+  }
+
+  // ── BABAS au pixel exact du centre ──
+  const babasWord   = 'BABAS';
+  const glitchChars = '#@%&0XZ8';
+  const bx = canvas.width / 2 - (babasWord.length * CW) / 2;
+  const by = canvas.height / 2 - CH / 2;
+
+  const showCount = introPhase === 'typing'
+    ? Math.min(5, Math.floor((t - introT0) / INTRO_LETTER_MS))
+    : 5;
+
+  for (let i = 0; i < showCount; i++) {
+    let ch = babasWord[i];
+
+    // Glitch seulement après l'intro
+    if (introPhase === 'done' && Math.random() < 0.003) {
+      ch = glitchChars[Math.floor(Math.random() * glitchChars.length)];
+    }
+
+    // Flash blanc quand la lettre vient d'apparaître
+    if (introPhase === 'typing') {
+      const letterAge = t - introT0 - i * INTRO_LETTER_MS;
+      ctx.fillStyle = letterAge < 80 ? '#ffffff' : 'rgb(255, 210, 245)';
+    } else {
+      ctx.fillStyle = 'rgb(255, 210, 245)';
+    }
+
+    ctx.fillText(ch, Math.round(bx + i * CW), Math.round(by));
+  }
+
+  // Curseur clignotant pendant le typing/hold
+  if (introPhase === 'typing' || introPhase === 'hold') {
+    const cursorX = Math.min(showCount, 5);
+    if (Math.floor(t / 380) % 2 === 0) {
+      ctx.fillStyle = 'rgb(255, 210, 245)';
+      ctx.fillText('_', Math.round(bx + cursorX * CW), Math.round(by));
+    }
+  }
+}
+
+// ── Trou central ──────────────────────────────────────
+function initHole() {
+  babasHoleRadius = 0.07;
+}
+
+// ── Parsing Markdown (titre h1 + corps) ──────────────
+function parseMd(text) {
+  const lines = text.split('\n');
+  let title = '', body = [], pastTitle = false;
+  for (const line of lines) {
+    if (!pastTitle && line.startsWith('# ')) {
+      title = line.slice(2).trim();
+      pastTitle = true;
+    } else if (pastTitle) {
+      body.push(line);
+    }
+  }
+  return { title, desc: body.join('\n').trim() };
+}
+
+// ── Démarrage ────────────────────────────────────────
+Promise.all([
+  document.fonts.ready,
+  fetch('projects/projects.json').then(r => r.json())
+]).then(([, data]) => {
+  // Charger le README.md de chaque projet
+  return Promise.all(data.map(p =>
+    fetch(`projects/${p.folder}/README.md`)
+      .then(r => r.ok ? r.text() : '')
+      .then(md => {
+        const parsed = parseMd(md);
+        p.title = parsed.title || p.folder;
+        p.desc  = parsed.desc;
+        return p;
+      })
+  ));
+}).then(data => {
+  PROJECTS = data;
+  numArms  = PROJECTS.length;
+  setupGrid();
+  runIntro();
+});
+
+// ── Animation d'intro : typewriter BABAS + onde circulaire ──
+let introRunning = true;
+let introPhase   = 'typing'; // typing → hold → wave → done
+let introT0      = 0;
+let introReveal  = 0;
+
+const INTRO_LETTER_MS = 220;   // délai entre chaque lettre
+const INTRO_HOLD_MS   = 600;   // pause après la dernière lettre
+const INTRO_WAVE_MS   = 2800;  // durée de l'onde
+const INTRO_WAVE_MAX  = 1.6;   // rayon max (couvre les coins)
+
+function runIntro() {
+  document.getElementById('intro').style.display = 'none';
+  introT0    = performance.now();
+  introPhase = 'typing';
+  requestAnimationFrame(frame);
+}
+
+window.addEventListener('resize', setupGrid);
+
+// ── Suivi souris ──────────────────────────────────────
+function detectHoveredArm(nx, ny) {
+  const cosA =  Math.cos(angle);
+  const sinA =  Math.sin(angle);
+  const rx   =  nx * cosA - ny * sinA;
+  const ry   =  nx * sinA + ny * cosA;
+  const dist = Math.sqrt(rx * rx + ry * ry);
+  if (dist < babasHoleRadius || dist > 1.0) return -1;
+  const phi       = Math.atan2(ry, rx);
+  const TIGHTNESS = 3.0;
+  const ARM_W     = Math.min(0.55, 0.20 / Math.sqrt(numArms) * 1.8);
+
+  let bestArm = -1, bestDiff = Infinity;
+  for (let a = 0; a < numArms; a++) {
+    const weight   = PROJECTS.length ? getWeight(PROJECTS[a]) : 0.75;
+    const armW     = ARM_W;
+    const base     = (a / numArms) * Math.PI * 2;
+    const expected = base + TIGHTNESS * Math.log(dist + 0.01);
+    let   diff     = ((phi - expected) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    if (diff > Math.PI) diff = Math.PI * 2 - diff;
+    // Normaliser par la largeur du bras pour comparer équitablement
+    if (diff / armW < bestDiff) { bestDiff = diff / armW; bestArm = a; }
+  }
+  return bestDiff < 5.0 ? bestArm : -1;
+}
+
+canvas.addEventListener('mousemove', e => {
+  const rect  = canvas.getBoundingClientRect();
+  const px    = (e.clientX - rect.left) * (canvas.width  / rect.width)  - canvas.width  * 0.5;
+  const py    = (e.clientY - rect.top)  * (canvas.height / rect.height) - canvas.height * 0.5;
+  const scale = Math.min(canvas.width, canvas.height) * 0.46;
+  mousePos = { nx: px / scale, ny: py / scale };
+  hoveredArm = detectHoveredArm(mousePos.nx, mousePos.ny);
+});
+canvas.addEventListener('mouseleave', () => { mousePos = null; hoveredArm = -1; canvas.classList.remove('hovering'); });
+
+// ── Curseur pointer quand on survole un bras ──────────
+const _origMM = canvas.onmousemove;
+canvas.addEventListener('mousemove', () => {
+  canvas.classList.toggle('hovering', hoveredArm !== -1);
+});
+
+// ── Clic sur un bras → ouvre le panneau ──────────────
+let selectedArm = -1;
+canvas.addEventListener('click', e => {
+  if (hoveredArm === -1) return;
+  selectedArm = hoveredArm;
+  openPanel(selectedArm);
+});
+
+const INTENSITY_LABELS = { light: 'LÉGER', medium: 'MOYEN', heavy: 'LOURD' };
+
+// ── Carousel ─────────────────────────────────────────
+let carouselIdx = 0;
+let carouselImgs = [];
+
+function carouselShow(i) {
+  carouselIdx = i;
+  document.querySelectorAll('#carousel img').forEach((img, j) => {
+    img.classList.toggle('active', j === i);
+  });
+  document.querySelectorAll('#carousel-dots .dot').forEach((d, j) => {
+    d.classList.toggle('active', j === i);
+  });
+}
+
+function carouselPrev() {
+  if (carouselImgs.length === 0) return;
+  carouselShow((carouselIdx - 1 + carouselImgs.length) % carouselImgs.length);
+}
+
+function carouselNext() {
+  if (carouselImgs.length === 0) return;
+  carouselShow((carouselIdx + 1) % carouselImgs.length);
+}
+
+// ── Lightbox ─────────────────────────────────────────
+let lbIdx = 0;
+
+function lbOpen(i) {
+  lbIdx = i;
+  const lb = document.getElementById('lightbox');
+  document.getElementById('lb-img').src = carouselImgs[i];
+  document.getElementById('lb-counter').textContent = `${i + 1} / ${carouselImgs.length}`;
+  lb.querySelectorAll('.lb-btn').forEach(b => {
+    b.style.display = carouselImgs.length > 1 ? '' : 'none';
+  });
+  lb.classList.add('open');
+}
+
+function lbClose() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+function lbPrev() {
+  lbIdx = (lbIdx - 1 + carouselImgs.length) % carouselImgs.length;
+  document.getElementById('lb-img').src = carouselImgs[lbIdx];
+  document.getElementById('lb-counter').textContent = `${lbIdx + 1} / ${carouselImgs.length}`;
+}
+
+function lbNext() {
+  lbIdx = (lbIdx + 1) % carouselImgs.length;
+  document.getElementById('lb-img').src = carouselImgs[lbIdx];
+  document.getElementById('lb-counter').textContent = `${lbIdx + 1} / ${carouselImgs.length}`;
+}
+
+// Fermer avec Echap ou clic sur le fond
+document.getElementById('lightbox').addEventListener('click', e => {
+  if (e.target === document.getElementById('lightbox')) lbClose();
+});
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('lightbox').classList.contains('open')) return;
+  if (e.key === 'Escape') lbClose();
+  if (e.key === 'ArrowLeft') lbPrev();
+  if (e.key === 'ArrowRight') lbNext();
+});
+
+function setupCarousel(proj) {
+  const car  = document.getElementById('carousel');
+  const dots = document.getElementById('carousel-dots');
+
+  // Nettoyer les images précédentes
+  car.querySelectorAll('img').forEach(img => img.remove());
+  dots.innerHTML = '';
+
+  carouselImgs = (proj.images || []).map(f => `projects/${proj.folder}/${f}`);
+
+  if (carouselImgs.length === 0) {
+    car.classList.add('hidden');
+    dots.classList.add('hidden');
+    return;
+  }
+
+  car.classList.remove('hidden');
+  dots.classList.remove('hidden');
+
+  carouselImgs.forEach((src, i) => {
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = `${proj.title} - ${i + 1}`;
+    // Cacher les boutons nav si l'image ne charge pas
+    img.onerror = () => { img.style.display = 'none'; };
+    img.onclick = () => lbOpen(i);
+    car.appendChild(img);
+
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    dot.onclick = () => carouselShow(i);
+    dots.appendChild(dot);
+  });
+
+  // Cacher les boutons prev/next si une seule image
+  car.querySelectorAll('.car-btn').forEach(b => {
+    b.style.display = carouselImgs.length > 1 ? '' : 'none';
+  });
+
+  carouselShow(0);
+}
+
+function openPanel(armIdx) {
+  const proj = PROJECTS[armIdx];
+  if (!proj) return;
+
+  document.getElementById('panel-title').textContent = (proj.title || proj.folder).toUpperCase();
+  document.getElementById('panel-sub').textContent   = proj.type.toUpperCase();
+  document.getElementById('p-intensity').textContent = INTENSITY_LABELS[proj.intensity] || proj.intensity;
+  document.getElementById('p-techs').textContent     = proj.techs.join(' · ');
+  document.getElementById('p-desc').textContent      = proj.desc || '';
+
+  const urlRow = document.getElementById('p-url-row');
+  const urlEl  = document.getElementById('p-url');
+  if (proj.url) {
+    urlRow.style.display = '';
+    urlEl.innerHTML = `<a href="${proj.url}" target="_blank" style="color:#bf6fff;text-decoration:none">${proj.url}</a>`;
+  } else {
+    urlRow.style.display = 'none';
+  }
+
+  setupCarousel(proj);
+
+  document.getElementById('panel').classList.add('open');
+  updatePanelWidth(panelWidth);
+}
+
+let panelWidth = 500;
+
+function updatePanelWidth(w) {
+  panelWidth = Math.max(260, Math.min(window.innerWidth * 0.6, w));
+  const panel = document.getElementById('panel');
+  const wrap  = document.getElementById('galaxy-wrap');
+  panel.style.width = panelWidth + 'px';
+  if (panel.classList.contains('open')) {
+    wrap.style.transform = `translateX(-${Math.round(panelWidth / 2)}px)`;
+  }
+}
+
+function closePanel() {
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('galaxy-wrap').style.transform = '';
+  selectedArm = -1;
+}
+
+// ── Resize drag du panneau ──
+(function() {
+  const handle = document.getElementById('panel-resize');
+  let dragging = false;
+
+  handle.addEventListener('mousedown', e => {
+    e.preventDefault();
+    dragging = true;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    updatePanelWidth(window.innerWidth - e.clientX);
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+})();
+
+</script>
+</body>
+</html>
