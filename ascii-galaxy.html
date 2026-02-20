@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>ASCII GALAXY</title>
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Courier+Prime&family=Nova+Mono&family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
@@ -17,6 +17,8 @@
     height: 100vh;
     overflow: hidden;
     font-family: 'Share Tech Mono', monospace;
+    touch-action: none;
+    -webkit-overflow-scrolling: touch;
   }
 
   canvas { display: block; }
@@ -141,11 +143,13 @@
   #carousel {
     position: relative;
     width: 100%;
-    aspect-ratio: 16 / 9;
+    min-height: 200px;
+    max-height: 400px;
     margin-top: 24px;
     border: 1px solid #1a0a2a;
     overflow: hidden;
     background: #030008;
+    flex-shrink: 0;
   }
   #carousel.hidden { display: none; }
 
@@ -266,8 +270,23 @@
 
   /* ── Responsive mobile ── */
   @media (max-width: 600px) {
-    #panel { width: 100% !important; }
+    #panel {
+      width: 100% !important;
+      height: 100%;
+      top: auto; right: 0; bottom: 0; left: 0;
+      border-left: none;
+      border-top: 1px solid #4a1a7a;
+      transform: translateY(100%);
+      padding: 24px 20px;
+    }
+    #panel.open { transform: translateY(0); }
     #panel-resize { display: none; }
+    #panel h2 { font-size: 24px; }
+    #panel .arm-num { font-size: 14px; margin-bottom: 16px; }
+    #panel .stat-label { font-size: 13px; }
+    #panel .stat-value { font-size: 18px; }
+    #panel .desc { font-size: 16px; }
+    #carousel { min-height: 150px; max-height: 250px; }
   }
 
   /* ── Intro overlay ── */
@@ -378,8 +397,9 @@ function setupGrid() {
   // Taille de police cible : ~120 colonnes sur desktop, adaptatif sur mobile
   const fontScale = { 'VT323': 1.0, 'Share Tech Mono': 0.75, 'Courier Prime': 1.0, 'Nova Mono': 1.0, 'Press Start 2P': 1.0 };
   const scale = fontScale[currentFont] || 1.0;
-  const targetCols = Math.min(120, Math.floor(availW / 8));
-  const fontSize = Math.max(8, Math.floor(availW / targetCols / 0.55 * scale));
+  const minChar = availW < 600 ? 10 : 8;
+  const targetCols = Math.min(120, Math.floor(availW / minChar));
+  const fontSize = Math.max(minChar, Math.floor(availW / targetCols / 0.55 * scale));
   const font = `${fontSize}px ${currentFont}, monospace`;
 
   // Mesurer CW et CH réels
@@ -987,6 +1007,94 @@ function closePanel() {
     document.body.style.userSelect = '';
   });
 })();
+
+// ── Touch events (mobile) ────────────────────────────
+const isMobile = 'ontouchstart' in window;
+
+canvas.addEventListener('touchstart', e => {
+  if (introRunning) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const rect  = canvas.getBoundingClientRect();
+  const px    = (touch.clientX - rect.left) * (canvas.width  / rect.width)  - canvas.width  * 0.5;
+  const py    = (touch.clientY - rect.top)  * (canvas.height / rect.height) - canvas.height * 0.5;
+  const scale = Math.min(canvas.width, canvas.height) * 0.46;
+  const arm   = detectHoveredArm(px / scale, py / scale);
+  if (arm !== -1) {
+    hoveredArm = -1;
+    canvas.classList.remove('hovering');
+    openPanel(arm);
+  }
+}, { passive: false });
+
+// Sur mobile, désactiver le hover persistant
+if (isMobile) {
+  canvas.addEventListener('touchend', () => {
+    hoveredArm = -1;
+    canvas.classList.remove('hovering');
+  });
+}
+
+// ── Swipe pour carousel ──────────────────────────────
+(function() {
+  let startX = 0, startY = 0;
+  const car = document.getElementById('carousel');
+
+  car.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  car.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      dx < 0 ? carouselNext() : carouselPrev();
+    }
+  }, { passive: true });
+})();
+
+// ── Swipe pour lightbox ──────────────────────────────
+(function() {
+  let startX = 0;
+  const lb = document.getElementById('lightbox');
+
+  lb.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+  }, { passive: true });
+
+  lb.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 50) {
+      dx < 0 ? lbNext() : lbPrev();
+    } else if (Math.abs(dx) < 10) {
+      lbClose();
+    }
+  }, { passive: true });
+})();
+
+// ── Panel scroll touch (autoriser le scroll dans le panel sur mobile) ──
+document.getElementById('panel').addEventListener('touchmove', e => {
+  e.stopPropagation();
+}, { passive: true });
+
+// ── Empêcher le bounce iOS sur le body ──
+document.body.addEventListener('touchmove', e => {
+  if (!e.target.closest('#panel') && !e.target.closest('#lightbox')) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+// ── Sur mobile, ne pas décaler la galaxie quand le panel s'ouvre ──
+const _origUpdatePanelWidth = updatePanelWidth;
+updatePanelWidth = function(w) {
+  if (window.innerWidth <= 600) {
+    const panel = document.getElementById('panel');
+    panel.style.width = '';
+    return;
+  }
+  _origUpdatePanelWidth(w);
+};
 
 </script>
 </body>
