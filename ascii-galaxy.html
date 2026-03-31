@@ -573,6 +573,7 @@ const i18n = {
         '  fortune           - Sagesse du développeur',
         '  cowsay [msg]      - Vache philosophe',
         '  make sandwich     - Prépare un sandwich',
+        '  lang fr|en        - Change la langue',
         '  clear             - Efface la console',
         '  exit              - Ferme la console'
       ],
@@ -613,7 +614,9 @@ const i18n = {
       hackerOff: '🌙 Retour à la réalité...',
       matrix: '🟢 Wake up, Neo...',
       notFound: 'Commande non trouvée. Tapez "help" pour la liste des commandes.',
-      exitMsg: '👋 À bientôt, hacker !'
+      exitMsg: '👋 À bientôt, hacker !',
+      langUsage: 'Usage: lang fr | lang en',
+      langChanged: '🌍 Langue changée ! Les projets ont été rechargés.'
     }
   },
   en: {
@@ -640,6 +643,7 @@ const i18n = {
         '  fortune           - Developer wisdom',
         '  cowsay [msg]      - Philosophical cow',
         '  make sandwich     - Make a sandwich',
+        '  lang fr|en        - Change language',
         '  clear             - Clear the console',
         '  exit              - Close the console'
       ],
@@ -680,7 +684,9 @@ const i18n = {
       hackerOff: '🌙 Back to reality...',
       matrix: '🟢 Wake up, Neo...',
       notFound: 'Command not found. Type "help" for the list of commands.',
-      exitMsg: '👋 See you later, hacker!'
+      exitMsg: '👋 See you later, hacker!',
+      langUsage: 'Usage: lang fr | lang en',
+      langChanged: '🌍 Language changed! Projects have been reloaded.'
     }
   }
 };
@@ -689,9 +695,13 @@ function t(key) {
   return i18n[currentLang][key] || key;
 }
 
-function selectLang(lang) {
+function detectLanguage() {
+  const browserLang = navigator.language || navigator.userLanguage || 'en';
+  return browserLang.startsWith('fr') ? 'fr' : 'en';
+}
+
+function setLang(lang) {
   currentLang = lang;
-  document.getElementById('lang-select').classList.add('hidden');
 
   // Mettre à jour le hint
   document.getElementById('hint').textContent = t('hint');
@@ -700,10 +710,17 @@ function selectLang(lang) {
   document.getElementById('label-intensity').textContent = t('intensity');
   document.getElementById('label-technologies').textContent = t('technologies');
   document.getElementById('label-link').textContent = t('link');
+}
 
-  // Charger les projets et démarrer
+function initWithAutoLang() {
+  currentLang = detectLanguage();
+  document.getElementById('lang-select').style.display = 'none';
+  setLang(currentLang);
   loadProjectsAndStart();
 }
+
+// Démarrage automatique avec détection de langue
+document.addEventListener('DOMContentLoaded', initWithAutoLang);
 
 // ─────────────────────────────────────────────────────
 //  Fausse Console / Easter Egg
@@ -848,6 +865,15 @@ function processCommand(cmd) {
   else if (lower === 'sudo make sandwich' || lower === 'sudo make me a sandwich') {
     appendOutput(tc('sudoSandwich'));
   }
+  else if (lower === 'lang fr' || lower === 'lang french' || lower === 'lang français') {
+    changeLang('fr');
+  }
+  else if (lower === 'lang en' || lower === 'lang english' || lower === 'lang anglais') {
+    changeLang('en');
+  }
+  else if (lower === 'lang') {
+    appendOutput(tc('langUsage'));
+  }
   else if (lower === 'clear') {
     document.getElementById('console-output').innerHTML = '';
   }
@@ -858,6 +884,27 @@ function processCommand(cmd) {
   else if (cmd.trim() !== '') {
     appendOutput(tc('notFound'), 'error');
   }
+}
+
+function changeLang(lang) {
+  setLang(lang);
+  // Recharger les projets avec la nouvelle langue
+  const readmeFile = currentLang === 'en' ? 'README_en.md' : 'README.md';
+  fetch('projects/projects.json').then(r => r.json()).then(data => {
+    return Promise.all(data.map(p =>
+      fetch(`projects/${p.folder}/${readmeFile}`)
+        .then(r => r.ok ? r.text() : '')
+        .then(md => {
+          const parsed = parseMd(md);
+          p.title = parsed.title || p.folder;
+          p.desc  = parsed.desc;
+          return p;
+        })
+    ));
+  }).then(data => {
+    PROJECTS = data;
+    appendOutput(tc('langChanged'));
+  });
 }
 
 function simulateRm() {
