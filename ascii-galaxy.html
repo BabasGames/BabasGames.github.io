@@ -471,6 +471,141 @@
   .hacker-mode {
     filter: hue-rotate(180deg) saturate(1.5);
   }
+
+  /* ── Bio card ── */
+  #bio-short {
+    position: fixed;
+    left: 50%;
+    top: calc(50% + 30px);
+    transform: translateX(-50%);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: #9a6aca;
+    text-align: center;
+    cursor: pointer;
+    padding: 8px 16px;
+    border: 1px solid transparent;
+    transition: top 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+                left 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.8s ease,
+                border-color 0.2s,
+                background 0.5s;
+    z-index: 50;
+    opacity: 0;
+    white-space: nowrap;
+  }
+  #bio-short.center {
+    top: calc(50% + 30px);
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 1;
+  }
+  #bio-short.bottom {
+    top: calc(100% - 60px);
+    left: 20px;
+    transform: translateX(0);
+    opacity: 1;
+    border-color: #2a1a4a;
+    background: rgba(5, 0, 15, 0.8);
+  }
+  #bio-short.bottom:hover {
+    border-color: #bf6fff;
+    color: #bf6fff;
+  }
+  #bio-short.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* ── Bio panel (version longue) ── */
+  #bio-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: rgba(5, 0, 15, 0.95);
+    border: 1px solid #4a1a7a;
+    padding: 40px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    z-index: 2500;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+  }
+  #bio-panel.open {
+    opacity: 1;
+    pointer-events: all;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  #bio-panel h2 {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: #bf6fff;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+  #bio-panel .bio-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 16px;
+    color: #9a6aca;
+    line-height: 1.8;
+    margin-bottom: 16px;
+  }
+  #bio-panel .bio-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  #bio-panel .skill-tag {
+    padding: 4px 12px;
+    border: 1px solid #4a1a7a;
+    color: #bf6fff;
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+  #bio-panel .bio-close {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    color: #4a1a7a;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 22px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  #bio-panel .bio-close:hover { color: #bf6fff; }
+
+  #bio-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 2400;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  #bio-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  @media (max-width: 600px) {
+    #bio-short { font-size: 11px; }
+    #bio-short.center { top: calc(50% + 25px); }
+    #bio-short.bottom { top: calc(100% - 50px); left: 10px; }
+    #bio-panel { padding: 24px; }
+    #bio-panel h2 { font-size: 22px; }
+    #bio-panel .bio-text { font-size: 14px; }
+  }
 </style>
 </head>
 <body>
@@ -496,6 +631,16 @@
       <span class="lang-label">English</span>
     </button>
   </div>
+</div>
+
+<div id="bio-short" onclick="openBio()"></div>
+<div id="bio-overlay" onclick="closeBio()"></div>
+<div id="bio-panel">
+  <button class="bio-close" onclick="closeBio()">✕</button>
+  <h2 id="bio-title">BABAS</h2>
+  <p class="bio-text" id="bio-text-1"></p>
+  <p class="bio-text" id="bio-text-2"></p>
+  <div class="bio-skills" id="bio-skills"></div>
 </div>
 
 <div id="lightbox">
@@ -555,6 +700,13 @@ const i18n = {
     technologies: 'Technologies',
     link: 'Lien',
     intensityLabels: { light: 'LÉGER', medium: 'MOYEN', heavy: 'LOURD' },
+    bio: {
+      short: '// Développeur talentueux & créateur de features',
+      title: 'BABAS',
+      text1: 'Développeur passionné avec un talent inné pour transformer le café en code. Spécialiste en résolution de bugs qui n\'auraient jamais dû exister et en création d\'interfaces que même ma mère trouve jolies.',
+      text2: 'Quand je ne code pas, je... non en fait je code tout le temps. Mes commits sont légendaires, mes pull requests sont des œuvres d\'art, et mes commentaires de code sont dignes de la poésie moderne.',
+      skills: ['Python', 'JavaScript', 'CSS qui marche', 'Stack Overflow', 'Ctrl+C / Ctrl+V', 'Debugger à 3h du mat', 'Promettre des deadlines impossibles', 'Café ☕']
+    },
     console: {
       welcome: [
         '╔══════════════════════════════════════════════════════════╗',
@@ -625,6 +777,13 @@ const i18n = {
     technologies: 'Technologies',
     link: 'Link',
     intensityLabels: { light: 'LIGHT', medium: 'MEDIUM', heavy: 'HEAVY' },
+    bio: {
+      short: '// Talented developer & feature creator',
+      title: 'BABAS',
+      text1: 'Passionate developer with an innate talent for turning coffee into code. Specialist in fixing bugs that should never have existed and creating interfaces that even my mom finds pretty.',
+      text2: 'When I\'m not coding, I... actually I\'m always coding. My commits are legendary, my pull requests are works of art, and my code comments are worthy of modern poetry.',
+      skills: ['Python', 'JavaScript', 'CSS that works', 'Stack Overflow', 'Ctrl+C / Ctrl+V', 'Debugging at 3am', 'Promising impossible deadlines', 'Coffee ☕']
+    },
     console: {
       welcome: [
         '╔══════════════════════════════════════════════════════════╗',
@@ -710,6 +869,36 @@ function setLang(lang) {
   document.getElementById('label-intensity').textContent = t('intensity');
   document.getElementById('label-technologies').textContent = t('technologies');
   document.getElementById('label-link').textContent = t('link');
+
+  // Mettre à jour la bio
+  updateBioContent();
+}
+
+function updateBioContent() {
+  const bio = i18n[currentLang].bio;
+  document.getElementById('bio-short').textContent = bio.short;
+  document.getElementById('bio-title').textContent = bio.title;
+  document.getElementById('bio-text-1').textContent = bio.text1;
+  document.getElementById('bio-text-2').textContent = bio.text2;
+
+  const skillsContainer = document.getElementById('bio-skills');
+  skillsContainer.innerHTML = '';
+  bio.skills.forEach(skill => {
+    const tag = document.createElement('span');
+    tag.className = 'skill-tag';
+    tag.textContent = skill;
+    skillsContainer.appendChild(tag);
+  });
+}
+
+function openBio() {
+  document.getElementById('bio-overlay').classList.add('open');
+  document.getElementById('bio-panel').classList.add('open');
+}
+
+function closeBio() {
+  document.getElementById('bio-overlay').classList.remove('open');
+  document.getElementById('bio-panel').classList.remove('open');
 }
 
 function initWithAutoLang() {
@@ -1250,6 +1439,10 @@ function frame(t) {
       if (elapsed > INTRO_HOLD_MS) {
         introPhase = 'wave';
         introT0 = t;
+        // Déplacer la bio vers le bas
+        const bioShort = document.getElementById('bio-short');
+        bioShort.classList.remove('center');
+        bioShort.classList.add('bottom');
       }
     } else if (introPhase === 'wave') {
       const p = Math.min(1, elapsed / INTRO_WAVE_MS);
@@ -1504,6 +1697,12 @@ function runIntro() {
   introRunning = true;
   introT0      = performance.now();
   introPhase   = 'typing';
+
+  // Afficher la bio au centre
+  const bioShort = document.getElementById('bio-short');
+  bioShort.classList.add('center');
+  bioShort.classList.remove('bottom', 'hidden');
+
   requestAnimationFrame(frame);
 }
 
