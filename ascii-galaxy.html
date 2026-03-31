@@ -302,9 +302,201 @@
   }
   #intro.fade-out { opacity: 0; pointer-events: none; }
   #intro-canvas { display: block; }
+
+  /* ── Hint d'onboarding ── */
+  #hint {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 16px;
+    letter-spacing: 3px;
+    color: #7a4aaa;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
+    z-index: 100;
+  }
+  #hint.visible { opacity: 1; }
+  #hint.fade-out { opacity: 0; }
+
+  @media (max-width: 600px) {
+    #hint {
+      font-size: 14px;
+      letter-spacing: 2px;
+      bottom: 30px;
+    }
+  }
+
+  /* ── Écran de sélection de langue ── */
+  #lang-select {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, #0a0515 0%, #050210 40%, #000 100%);
+    z-index: 1500;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 60px;
+    transition: opacity 0.6s ease;
+  }
+  #lang-select.hidden { opacity: 0; pointer-events: none; }
+
+  #lang-select h1 {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 18px;
+    letter-spacing: 4px;
+    color: #7a4aaa;
+    text-transform: uppercase;
+  }
+
+  .lang-buttons {
+    display: flex;
+    gap: 60px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .lang-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 24px 32px;
+    background: transparent;
+    border: 1px solid #2a1a4a;
+    cursor: pointer;
+    transition: border-color 0.3s, transform 0.2s;
+  }
+  .lang-btn:hover {
+    border-color: #bf6fff;
+    transform: scale(1.05);
+  }
+
+  .flag {
+    height: 50px;
+    width: auto;
+    border: 1px solid #2a1a4a;
+  }
+
+  .lang-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 16px;
+    letter-spacing: 3px;
+    color: #bf6fff;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 600px) {
+    .lang-buttons { gap: 30px; }
+    .lang-btn { padding: 16px 20px; }
+    .flag { height: 40px; }
+    .lang-label { font-size: 14px; }
+    #lang-select h1 { font-size: 14px; }
+  }
+
+  /* ── Fausse console Easter Egg ── */
+  #fake-console {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 300px;
+    min-height: 100px;
+    max-height: 80vh;
+    background: rgba(0, 0, 0, 0.95);
+    border-bottom: 2px solid #4a1a7a;
+    font-family: 'Share Tech Mono', monospace;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(-100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  #fake-console.open { transform: translateY(0); }
+
+  #console-output {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    font-size: 14px;
+    color: #bf6fff;
+    line-height: 1.5;
+  }
+  #console-output .error { color: #f55; }
+  #console-output .info { color: #9a6aca; }
+  #console-output .warning { color: #ff5; }
+  #console-output .comment { color: #5a3a8a; }
+
+  #console-input-line {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-top: 1px solid #2a1a4a;
+    background: rgba(0, 0, 0, 0.5);
+  }
+  #console-prompt {
+    color: #bf6fff;
+    margin-right: 8px;
+    white-space: nowrap;
+  }
+  #console-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #bf6fff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+  }
+
+  #console-resize {
+    height: 6px;
+    cursor: ns-resize;
+    background: linear-gradient(to bottom, transparent, #2a1a4a);
+  }
+  #console-resize:hover { background: linear-gradient(to bottom, transparent, #bf6fff); }
+
+  .barrel-roll {
+    animation: barrel-roll 1s ease-in-out;
+  }
+  @keyframes barrel-roll {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .hacker-mode {
+    filter: hue-rotate(180deg) saturate(1.5);
+  }
 </style>
 </head>
 <body>
+
+<div id="fake-console">
+  <div id="console-output"></div>
+  <div id="console-input-line">
+    <span id="console-prompt">babas@galaxy:~$</span>
+    <input type="text" id="console-input" autocomplete="off" spellcheck="false">
+  </div>
+  <div id="console-resize"></div>
+</div>
+
+<div id="lang-select">
+  <h1>Select your language</h1>
+  <div class="lang-buttons">
+    <button class="lang-btn" onclick="selectLang('fr')">
+      <img class="flag" src="https://flagcdn.com/fr.svg" alt="FR">
+      <span class="lang-label">Français</span>
+    </button>
+    <button class="lang-btn" onclick="selectLang('en')">
+      <img class="flag" src="https://flagcdn.com/gb.svg" alt="EN">
+      <span class="lang-label">English</span>
+    </button>
+  </div>
+</div>
 
 <div id="lightbox">
   <button class="lb-close" onclick="lbClose()">✕</button>
@@ -317,6 +509,7 @@
 <div id="intro">
   <canvas id="intro-canvas"></canvas>
 </div>
+<div id="hint">[ CLIQUEZ SUR UN BRAS ]</div>
 <div id="app">
   <div id="galaxy-wrap">
     <canvas id="galaxy"></canvas>
@@ -327,15 +520,15 @@
     <h2 id="panel-title">PROJET</h2>
     <div class="arm-num" id="panel-sub">TYPE</div>
     <div class="stat">
-      <span class="stat-label">Intensité</span>
+      <span class="stat-label" id="label-intensity">Intensité</span>
       <span class="stat-value" id="p-intensity">—</span>
     </div>
     <div class="stat">
-      <span class="stat-label">Technologies</span>
+      <span class="stat-label" id="label-technologies">Technologies</span>
       <span class="stat-value" id="p-techs">—</span>
     </div>
     <div class="stat" id="p-url-row">
-      <span class="stat-label">Lien</span>
+      <span class="stat-label" id="label-link">Lien</span>
       <span class="stat-value" id="p-url">—</span>
     </div>
     <div class="desc" id="p-desc"></div>
@@ -349,6 +542,412 @@
 
 
 <script>
+// ─────────────────────────────────────────────────────
+//  Système de langue / i18n
+// ─────────────────────────────────────────────────────
+
+let currentLang = 'fr';
+
+const i18n = {
+  fr: {
+    hint: '[ CLIQUEZ SUR UN BRAS ]',
+    intensity: 'Intensité',
+    technologies: 'Technologies',
+    link: 'Lien',
+    intensityLabels: { light: 'LÉGER', medium: 'MOYEN', heavy: 'LOURD' },
+    console: {
+      welcome: [
+        '╔══════════════════════════════════════════════════════════╗',
+        '║  BABAS TERMINAL v4.2.0 - "Edition Spaghetti Code"       ║',
+        '║  Tapez "help" pour voir les commandes disponibles       ║',
+        '╚══════════════════════════════════════════════════════════╝'
+      ],
+      help: [
+        'Commandes disponibles :',
+        '  help              - Affiche cette aide',
+        '  whoami            - Qui êtes-vous ?',
+        '  sudo rm -rf /     - Supprime tout (à vos risques)',
+        '  do-a-barrel-roll  - Fait tourner la page',
+        '  hacker            - Mode hacker activé',
+        '  matrix            - Entrez dans la matrice',
+        '  fortune           - Sagesse du développeur',
+        '  cowsay [msg]      - Vache philosophe',
+        '  make sandwich     - Prépare un sandwich',
+        '  clear             - Efface la console',
+        '  exit              - Ferme la console'
+      ],
+      whoami: ['Vous êtes un visiteur curieux qui a trouvé le code Konami !', 'Félicitations, vous êtes officiellement un nerd. 🎮'],
+      rmFiles: [
+        { file: 'Suppression de /home/babas/projet-final-v2-FINAL-vraiment-final.zip', comment: '// 47 versions et on compte encore...' },
+        { file: 'Suppression de /home/babas/Nouveau dossier (37)/', comment: '// Un jour je rangerai' },
+        { file: 'Suppression de /var/www/node_modules/', comment: '// 2.7 Go pour un Hello World' },
+        { file: 'Suppression de /home/babas/.npm-cache/', comment: '// Encore 4 Go de gagnés' },
+        { file: 'Suppression de /System32/', comment: '// Ah non c\'est Windows ça !' },
+        { file: 'Suppression de /home/babas/cv-2019-final-FINAL-v3-ENVOYER.pdf', comment: '// Toujours pas envoyé' },
+        { file: 'Suppression de /home/babas/.bash_history', comment: '// Les preuves sont détruites' },
+        { file: 'Suppression de /usr/share/regrets/', comment: '// Dossier trop volumineux' },
+        { file: 'Suppression de /dev/hope', comment: '// Fichier introuvable depuis 2020' },
+        { file: 'Suppression de /home/babas/motivation.txt', comment: '// 0 octets' },
+        { file: 'Suppression de /tmp/code-qui-marche-sais-pas-pourquoi/', comment: '// ON TOUCHE PAS' },
+        { file: 'Suppression de /var/log/stackoverflow-copies/', comment: '// Merci les inconnus' },
+        { file: 'Suppression de /home/babas/Desktop/Capture d\'écran (1453).png', comment: '// Je cherchais celle-là !' },
+        { file: 'Suppression de /home/babas/.config/pourquoi-ca-marche/', comment: '// Mystère et boule de gomme' },
+        { file: 'Suppression de /opt/lampp/htdocs/test/test2/test_final/', comment: '// L\'archéologie du dev' },
+        { file: 'Suppression de /home/babas/TODO-a-faire-urgent-IMPORTANT.txt', comment: '// Créé il y a 2 ans' },
+        { file: 'Suppression de /', comment: '' },
+        { file: '💥 BOOM ! Tout est parti.', comment: 'Rechargez la page... si vous osez.' }
+      ],
+      fortune: [
+        '"Un code qui marche est un code qu\'on ne touche plus." - Proverbe dev',
+        '"Il n\'y a pas de bugs, que des features non documentées." - Anonyme',
+        '"console.log est mon debugger préféré." - Tout le monde',
+        '"Ça marche sur ma machine ¯\\_(ツ)_/¯" - Tout développeur',
+        '"Le code legacy, c\'est le code qu\'on a écrit hier." - Sagesse',
+        '"Pourquoi faire simple quand on peut faire compliqué ?" - Mon cerveau',
+        '"Un bon développeur est un développeur paresseux." - Vérité universelle'
+      ],
+      sandwich: 'Vous n\'êtes pas root. Essayez avec sudo !',
+      sudoSandwich: '🥪 Voici votre sandwich, maître.',
+      barrelRoll: '🔄 Wheeeeeee !',
+      hacker: '👨‍💻 Mode hacker activé. Vous êtes maintenant dans la matrice.',
+      hackerOff: '🌙 Retour à la réalité...',
+      matrix: '🟢 Wake up, Neo...',
+      notFound: 'Commande non trouvée. Tapez "help" pour la liste des commandes.',
+      exitMsg: '👋 À bientôt, hacker !'
+    }
+  },
+  en: {
+    hint: '[ CLICK ON A BRANCH ]',
+    intensity: 'Intensity',
+    technologies: 'Technologies',
+    link: 'Link',
+    intensityLabels: { light: 'LIGHT', medium: 'MEDIUM', heavy: 'HEAVY' },
+    console: {
+      welcome: [
+        '╔══════════════════════════════════════════════════════════╗',
+        '║  BABAS TERMINAL v4.2.0 - "Spaghetti Code Edition"       ║',
+        '║  Type "help" to see available commands                  ║',
+        '╚══════════════════════════════════════════════════════════╝'
+      ],
+      help: [
+        'Available commands:',
+        '  help              - Show this help',
+        '  whoami            - Who are you?',
+        '  sudo rm -rf /     - Delete everything (at your own risk)',
+        '  do-a-barrel-roll  - Spin the page',
+        '  hacker            - Activate hacker mode',
+        '  matrix            - Enter the matrix',
+        '  fortune           - Developer wisdom',
+        '  cowsay [msg]      - Philosophical cow',
+        '  make sandwich     - Make a sandwich',
+        '  clear             - Clear the console',
+        '  exit              - Close the console'
+      ],
+      whoami: ['You are a curious visitor who found the Konami code!', 'Congratulations, you are officially a nerd. 🎮'],
+      rmFiles: [
+        { file: 'Deleting /home/babas/project-final-v2-FINAL-really-final.zip', comment: '// 47 versions and counting...' },
+        { file: 'Deleting /home/babas/New folder (37)/', comment: '// I\'ll organize it someday' },
+        { file: 'Deleting /var/www/node_modules/', comment: '// 2.7 GB for a Hello World' },
+        { file: 'Deleting /home/babas/.npm-cache/', comment: '// Another 4 GB saved' },
+        { file: 'Deleting /System32/', comment: '// Wait, that\'s Windows!' },
+        { file: 'Deleting /home/babas/resume-2019-final-FINAL-v3-SEND.pdf', comment: '// Still not sent' },
+        { file: 'Deleting /home/babas/.bash_history', comment: '// Evidence destroyed' },
+        { file: 'Deleting /usr/share/regrets/', comment: '// Folder too large' },
+        { file: 'Deleting /dev/hope', comment: '// File not found since 2020' },
+        { file: 'Deleting /home/babas/motivation.txt', comment: '// 0 bytes' },
+        { file: 'Deleting /tmp/code-that-works-dunno-why/', comment: '// DO NOT TOUCH' },
+        { file: 'Deleting /var/log/stackoverflow-copies/', comment: '// Thanks strangers' },
+        { file: 'Deleting /home/babas/Desktop/Screenshot (1453).png', comment: '// I was looking for that one!' },
+        { file: 'Deleting /home/babas/.config/why-does-this-work/', comment: '// Mystery' },
+        { file: 'Deleting /opt/lampp/htdocs/test/test2/test_final/', comment: '// Dev archaeology' },
+        { file: 'Deleting /home/babas/TODO-urgent-IMPORTANT.txt', comment: '// Created 2 years ago' },
+        { file: 'Deleting /', comment: '' },
+        { file: '💥 BOOM! Everything is gone.', comment: 'Reload the page... if you dare.' }
+      ],
+      fortune: [
+        '"Code that works is code you don\'t touch." - Dev proverb',
+        '"There are no bugs, only undocumented features." - Anonymous',
+        '"console.log is my favorite debugger." - Everyone',
+        '"It works on my machine ¯\\_(ツ)_/¯" - Every developer',
+        '"Legacy code is the code we wrote yesterday." - Wisdom',
+        '"Why keep it simple when you can overcomplicate it?" - My brain',
+        '"A good developer is a lazy developer." - Universal truth'
+      ],
+      sandwich: 'You are not root. Try with sudo!',
+      sudoSandwich: '🥪 Here is your sandwich, master.',
+      barrelRoll: '🔄 Wheeeeeee!',
+      hacker: '👨‍💻 Hacker mode activated. You are now in the matrix.',
+      hackerOff: '🌙 Back to reality...',
+      matrix: '🟢 Wake up, Neo...',
+      notFound: 'Command not found. Type "help" for the list of commands.',
+      exitMsg: '👋 See you later, hacker!'
+    }
+  }
+};
+
+function t(key) {
+  return i18n[currentLang][key] || key;
+}
+
+function selectLang(lang) {
+  currentLang = lang;
+  document.getElementById('lang-select').classList.add('hidden');
+
+  // Mettre à jour le hint
+  document.getElementById('hint').textContent = t('hint');
+
+  // Mettre à jour les labels du panneau
+  document.getElementById('label-intensity').textContent = t('intensity');
+  document.getElementById('label-technologies').textContent = t('technologies');
+  document.getElementById('label-link').textContent = t('link');
+
+  // Charger les projets et démarrer
+  loadProjectsAndStart();
+}
+
+// ─────────────────────────────────────────────────────
+//  Fausse Console / Easter Egg
+// ─────────────────────────────────────────────────────
+
+const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+let konamiIndex = 0;
+let consoleOpen = false;
+let hackerMode = false;
+let commandHistory = [];
+let historyIndex = -1;
+
+function tc(key) {
+  return i18n[currentLang].console[key] || key;
+}
+
+// Détection du code Konami
+document.addEventListener('keydown', e => {
+  if (consoleOpen) return;
+
+  const expected = KONAMI_CODE[konamiIndex];
+  if (e.key === expected || e.key.toLowerCase() === expected) {
+    konamiIndex++;
+    if (konamiIndex === KONAMI_CODE.length) {
+      konamiIndex = 0;
+      openConsole();
+    }
+  } else {
+    konamiIndex = 0;
+  }
+});
+
+function openConsole() {
+  consoleOpen = true;
+  const con = document.getElementById('fake-console');
+  const output = document.getElementById('console-output');
+  const input = document.getElementById('console-input');
+
+  output.innerHTML = '';
+  tc('welcome').forEach(line => appendOutput(line, 'info'));
+  appendOutput('');
+
+  con.classList.add('open');
+  setTimeout(() => input.focus(), 400);
+}
+
+function closeConsole() {
+  consoleOpen = false;
+  document.getElementById('fake-console').classList.remove('open');
+}
+
+function appendOutput(text, className = '') {
+  const output = document.getElementById('console-output');
+  const div = document.createElement('div');
+  div.textContent = text;
+  if (className) div.className = className;
+  output.appendChild(div);
+  output.scrollTop = output.scrollHeight;
+}
+
+function appendOutputHTML(html) {
+  const output = document.getElementById('console-output');
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  output.appendChild(div);
+  output.scrollTop = output.scrollHeight;
+}
+
+// Gestion des commandes
+document.getElementById('console-input').addEventListener('keydown', e => {
+  const input = e.target;
+
+  if (e.key === 'Enter') {
+    const cmd = input.value.trim();
+    input.value = '';
+
+    if (cmd) {
+      commandHistory.push(cmd);
+      historyIndex = commandHistory.length;
+    }
+
+    appendOutput(`babas@galaxy:~$ ${cmd}`, 'comment');
+    processCommand(cmd);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (historyIndex > 0) {
+      historyIndex--;
+      input.value = commandHistory[historyIndex];
+    }
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (historyIndex < commandHistory.length - 1) {
+      historyIndex++;
+      input.value = commandHistory[historyIndex];
+    } else {
+      historyIndex = commandHistory.length;
+      input.value = '';
+    }
+  } else if (e.key === 'Escape') {
+    closeConsole();
+  }
+});
+
+function processCommand(cmd) {
+  const lower = cmd.toLowerCase();
+  const args = cmd.split(' ').slice(1).join(' ');
+
+  if (lower === 'help') {
+    tc('help').forEach(line => appendOutput(line));
+  }
+  else if (lower === 'whoami') {
+    tc('whoami').forEach(line => appendOutput(line));
+  }
+  else if (lower === 'sudo rm -rf /' || lower === 'sudo rm -rf /*') {
+    simulateRm();
+  }
+  else if (lower === 'do-a-barrel-roll') {
+    appendOutput(tc('barrelRoll'));
+    document.body.classList.add('barrel-roll');
+    setTimeout(() => document.body.classList.remove('barrel-roll'), 1000);
+  }
+  else if (lower === 'hacker') {
+    hackerMode = !hackerMode;
+    document.body.classList.toggle('hacker-mode', hackerMode);
+    appendOutput(hackerMode ? tc('hacker') : tc('hackerOff'));
+  }
+  else if (lower === 'matrix') {
+    appendOutput(tc('matrix'));
+    startMatrix();
+  }
+  else if (lower === 'fortune') {
+    const fortunes = tc('fortune');
+    appendOutput(fortunes[Math.floor(Math.random() * fortunes.length)]);
+  }
+  else if (lower.startsWith('cowsay')) {
+    const msg = args || 'Moo!';
+    cowsay(msg);
+  }
+  else if (lower === 'make sandwich') {
+    appendOutput(tc('sandwich'), 'error');
+  }
+  else if (lower === 'sudo make sandwich' || lower === 'sudo make me a sandwich') {
+    appendOutput(tc('sudoSandwich'));
+  }
+  else if (lower === 'clear') {
+    document.getElementById('console-output').innerHTML = '';
+  }
+  else if (lower === 'exit') {
+    appendOutput(tc('exitMsg'));
+    setTimeout(closeConsole, 500);
+  }
+  else if (cmd.trim() !== '') {
+    appendOutput(tc('notFound'), 'error');
+  }
+}
+
+function simulateRm() {
+  const files = tc('rmFiles');
+  let i = 0;
+
+  const interval = setInterval(() => {
+    if (i < files.length) {
+      const item = files[i];
+      const isLast = i === files.length - 1;
+      if (item.comment) {
+        appendOutputHTML(
+          `<span class="${isLast ? 'error' : ''}">${escapeHtml(item.file)}</span> <span class="comment">${escapeHtml(item.comment)}</span>`
+        );
+      } else {
+        appendOutput(item.file, isLast ? 'error' : '');
+      }
+      i++;
+    } else {
+      clearInterval(interval);
+    }
+  }, 350);
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function cowsay(msg) {
+  const len = msg.length;
+  const border = '+' + '-'.repeat(len + 2) + '+';
+  appendOutput(border);
+  appendOutput('| ' + msg + ' |');
+  appendOutput(border);
+  appendOutput('     \\   ^__^');
+  appendOutput('      \\  (oo)\\_______');
+  appendOutput('         (__)\\       )\\/\\');
+  appendOutput('             ||----w |');
+  appendOutput('             ||     ||');
+}
+
+function startMatrix() {
+  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789';
+  const output = document.getElementById('console-output');
+  let count = 0;
+
+  const interval = setInterval(() => {
+    let line = '';
+    for (let i = 0; i < 60; i++) {
+      line += chars[Math.floor(Math.random() * chars.length)];
+    }
+    const div = document.createElement('div');
+    div.textContent = line;
+    div.style.color = `rgb(0, ${150 + Math.random() * 105}, 0)`;
+    output.appendChild(div);
+    output.scrollTop = output.scrollHeight;
+    count++;
+    if (count > 20) clearInterval(interval);
+  }, 100);
+}
+
+// Resize de la console
+(function() {
+  const con = document.getElementById('fake-console');
+  const handle = document.getElementById('console-resize');
+  let dragging = false;
+
+  handle.addEventListener('mousedown', e => {
+    e.preventDefault();
+    dragging = true;
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const newHeight = Math.max(100, Math.min(window.innerHeight * 0.8, e.clientY));
+    con.style.height = newHeight + 'px';
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+})();
+
 // ─────────────────────────────────────────────────────
 //  Rendu sur <canvas> avec fillText() à positions pixel
 //  exactes → zéro sautillement, aspect ratio parfait.
@@ -503,7 +1102,8 @@ function getCellArm(col, row) {
   return bestStr > 0.003 ? bestArm : -1;
 }
 
-function getColor(inten, col, row, hovered) {
+function getColor(inten, col, row, highlightAmount) {
+  // highlightAmount: 0 = pas de highlight, 1 = highlight max
   const px   = (col + 0.5) * CW - canvas.width  * 0.5;
   const py   = (row + 0.5) * CH - canvas.height * 0.5;
   const scale = Math.min(canvas.width, canvas.height) * 0.46;
@@ -522,9 +1122,9 @@ function getColor(inten, col, row, hovered) {
   else if (dist < 0.55) { r = Math.round(v*0.55);       g = 0;                        b = Math.round(v*0.9);        }
   else                  { r = Math.round(v*0.3);        g = 0;                        b = Math.round(v*0.45);       }
 
-  // Hover : mix proportionnel à l'intensité → zones claires s'éclaircissent, zones sombres restent discrètes
-  if (hovered) {
-    const mix = Math.pow(inten, 2) * 0.7; // sombre=0.2, clair=0.7
+  // Highlight : mix proportionnel à l'intensité et au highlightAmount
+  if (highlightAmount > 0) {
+    const mix = Math.pow(inten, 2) * 0.7 * highlightAmount;
     r = Math.round(r + (255 - r) * mix);
     g = Math.round(g + (255 - g) * mix);
     b = Math.round(b + (255 - b) * mix);
@@ -568,6 +1168,18 @@ let speedMult = 4;
 let spinning  = true;
 let flickerOn = true;
 
+// ── Onboarding : pulse des bras + hint ───────────────
+let onboardingActive = false;
+let onboardingT0 = 0;
+let onboardingPulseArm = -1;  // bras actuellement pulsé (-1 = aucun)
+let onboardingPulseIntensity = 0;  // intensité du pulse (0-1)
+const ONBOARDING_PULSE_DURATION = 600;  // durée du pulse par bras (ms)
+const ONBOARDING_PULSE_GAP = 150;       // pause entre les bras (ms)
+const ONBOARDING_PAUSE = 5000;          // pause avant de recommencer (ms)
+let hintVisible = false;
+let hintWasShown = false;  // true une fois que le hint a été affiché au moins une fois
+let hintTimeout = null;
+
 const FPS_CHAR = 15;           // fréquence de changement des chars
 const MS_CHAR  = 1000 / FPS_CHAR;
 let lastCharT  = 0;
@@ -598,6 +1210,42 @@ function frame(t) {
       if (p >= 1) {
         introPhase = 'done';
         introRunning = false;
+        startOnboarding(t);
+      }
+    }
+  }
+
+  // ── Onboarding pulse animation ──
+  if (onboardingActive) {
+    // Arrêter si le hint a été fermé (après avoir été affiché)
+    if (hintWasShown && !hintVisible) {
+      onboardingActive = false;
+      onboardingPulseArm = -1;
+      onboardingPulseIntensity = 0;
+    } else {
+      const cycleDuration = ONBOARDING_PULSE_DURATION + ONBOARDING_PULSE_GAP;
+      const waveDuration = cycleDuration * numArms;
+      const fullCycle = waveDuration + ONBOARDING_PAUSE;
+
+      const onboardElapsed = (t - onboardingT0) % fullCycle;  // boucle infinie
+
+      if (onboardElapsed < waveDuration) {
+        const currentCycle = Math.floor(onboardElapsed / cycleDuration);
+        const cycleTime = onboardElapsed % cycleDuration;
+
+        if (cycleTime < ONBOARDING_PULSE_DURATION) {
+          onboardingPulseArm = currentCycle;
+          // Ease in-out: sin curve de 0 à PI donne 0 → 1 → 0
+          const p = cycleTime / ONBOARDING_PULSE_DURATION;
+          onboardingPulseIntensity = Math.sin(p * Math.PI);
+        } else {
+          onboardingPulseArm = -1;
+          onboardingPulseIntensity = 0;
+        }
+      } else {
+        // Pause entre les cycles
+        onboardingPulseArm = -1;
+        onboardingPulseIntensity = 0;
       }
     }
   }
@@ -671,8 +1319,11 @@ function frame(t) {
       const ch = pickChar(inten + waveBrightBoost, noise);
       if (!ch) continue;
 
-      const onHov = hoveredArm !== -1 && inten > 0.08 && getCellArm(c, r) === hoveredArm;
-      ctx.fillStyle = getColor(Math.min(1, inten + noise * 0.4 + waveBrightBoost), c, r, onHov);
+      const cellArm = inten > 0.08 ? getCellArm(c, r) : -1;
+      const onHov = hoveredArm !== -1 && cellArm === hoveredArm ? 1 : 0;
+      const onPulse = onboardingPulseArm !== -1 && cellArm === onboardingPulseArm ? onboardingPulseIntensity : 0;
+      const highlight = Math.max(onHov, onPulse);
+      ctx.fillStyle = getColor(Math.min(1, inten + noise * 0.4 + waveBrightBoost), c, r, highlight);
       ctx.fillText(ch, Math.round(c * CW), Math.round(r * CH));
     }
   }
@@ -716,6 +1367,33 @@ function frame(t) {
   }
 }
 
+// ── Onboarding : démarrage ────────────────────────────
+function startOnboarding(t) {
+  onboardingActive = true;
+  onboardingT0 = t;
+  onboardingPulseArm = 0;
+
+  // Afficher le hint après un court délai (reste visible jusqu'au clic sur un bras)
+  setTimeout(() => {
+    const hint = document.getElementById('hint');
+    hint.classList.add('visible');
+    hintVisible = true;
+    hintWasShown = true;
+  }, 300);
+}
+
+function hideHint() {
+  if (!hintVisible) return;
+  const hint = document.getElementById('hint');
+  hint.classList.remove('visible');
+  hint.classList.add('fade-out');
+  hintVisible = false;
+  if (hintTimeout) {
+    clearTimeout(hintTimeout);
+    hintTimeout = null;
+  }
+}
+
 // ── Trou central ──────────────────────────────────────
 function initHole() {
   babasHoleRadius = 0.07;
@@ -737,31 +1415,35 @@ function parseMd(text) {
 }
 
 // ── Démarrage ────────────────────────────────────────
-Promise.all([
-  document.fonts.ready,
-  fetch('projects/projects.json').then(r => r.json())
-]).then(([, data]) => {
-  // Charger le README.md de chaque projet
-  return Promise.all(data.map(p =>
-    fetch(`projects/${p.folder}/README.md`)
-      .then(r => r.ok ? r.text() : '')
-      .then(md => {
-        const parsed = parseMd(md);
-        p.title = parsed.title || p.folder;
-        p.desc  = parsed.desc;
-        return p;
-      })
-  ));
-}).then(data => {
-  PROJECTS = data;
-  numArms  = PROJECTS.length;
-  setupGrid();
-  runIntro();
-});
+function loadProjectsAndStart() {
+  const readmeFile = currentLang === 'en' ? 'README_en.md' : 'README.md';
+
+  Promise.all([
+    document.fonts.ready,
+    fetch('projects/projects.json').then(r => r.json())
+  ]).then(([, data]) => {
+    // Charger le README selon la langue
+    return Promise.all(data.map(p =>
+      fetch(`projects/${p.folder}/${readmeFile}`)
+        .then(r => r.ok ? r.text() : '')
+        .then(md => {
+          const parsed = parseMd(md);
+          p.title = parsed.title || p.folder;
+          p.desc  = parsed.desc;
+          return p;
+        })
+    ));
+  }).then(data => {
+    PROJECTS = data;
+    numArms  = PROJECTS.length;
+    setupGrid();
+    runIntro();
+  });
+}
 
 // ── Animation d'intro : typewriter BABAS + onde circulaire ──
-let introRunning = true;
-let introPhase   = 'typing'; // typing → hold → wave → done
+let introRunning = false;
+let introPhase   = 'waiting'; // waiting → typing → hold → wave → done
 let introT0      = 0;
 let introReveal  = 0;
 
@@ -772,8 +1454,9 @@ const INTRO_WAVE_MAX  = 1.6;   // rayon max (couvre les coins)
 
 function runIntro() {
   document.getElementById('intro').style.display = 'none';
-  introT0    = performance.now();
-  introPhase = 'typing';
+  introRunning = true;
+  introT0      = performance.now();
+  introPhase   = 'typing';
   requestAnimationFrame(frame);
 }
 
@@ -825,11 +1508,14 @@ canvas.addEventListener('mousemove', () => {
 let selectedArm = -1;
 canvas.addEventListener('click', e => {
   if (hoveredArm === -1) return;
+  hideHint();  // Cacher le hint seulement quand on clique sur un bras
   selectedArm = hoveredArm;
   openPanel(selectedArm);
 });
 
-const INTENSITY_LABELS = { light: 'LÉGER', medium: 'MOYEN', heavy: 'LOURD' };
+function getIntensityLabel(intensity) {
+  return i18n[currentLang].intensityLabels[intensity] || intensity;
+}
 
 // ── Carousel ─────────────────────────────────────────
 let carouselIdx = 0;
@@ -944,7 +1630,7 @@ function openPanel(armIdx) {
 
   document.getElementById('panel-title').textContent = (proj.title || proj.folder).toUpperCase();
   document.getElementById('panel-sub').textContent   = proj.type.toUpperCase();
-  document.getElementById('p-intensity').textContent = INTENSITY_LABELS[proj.intensity] || proj.intensity;
+  document.getElementById('p-intensity').textContent = getIntensityLabel(proj.intensity);
   document.getElementById('p-techs').textContent     = proj.techs.join(' · ');
   document.getElementById('p-desc').textContent      = proj.desc || '';
 
@@ -1021,6 +1707,7 @@ canvas.addEventListener('touchstart', e => {
   const scale = Math.min(canvas.width, canvas.height) * 0.46;
   const arm   = detectHoveredArm(px / scale, py / scale);
   if (arm !== -1) {
+    hideHint();  // Cacher le hint seulement quand on touche un bras
     hoveredArm = -1;
     canvas.classList.remove('hovering');
     openPanel(arm);
